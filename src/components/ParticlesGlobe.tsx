@@ -17,7 +17,7 @@ export default function ParticlesGlobe({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const globeRef = useRef<GlobeApi | null>(null);
   // not used now (points layer), but kept for future sprite usage
-  const textureRef = useRef<any>(null);
+  const textureRef = useRef<unknown>(null);
 
   // Create a soft circular sprite texture for glow
   const buildParticleTexture = useMemo(() => {
@@ -38,7 +38,7 @@ export default function ParticlesGlobe({
   }, []);
 
   useEffect(() => {
-    let isMounted = true;
+    const isMounted = true;
     const init = async () => {
       const holder = containerRef.current;
       if (!holder) return;
@@ -96,7 +96,7 @@ export default function ParticlesGlobe({
 
       // Load cities and create particles
       // Try to load cities; fallback to procedural sphere sampling on failure
-      let particles: Particle[] = [];
+      const particles: Particle[] = [];
       try {
         throw new Error('skip_remote');
       } catch {
@@ -117,16 +117,23 @@ export default function ParticlesGlobe({
       }
 
       const center: Particle | null = user ? { lat: user.lat, lng: user.lng, altitude: 0.018, size: 2.2 } : null;
-      const allPoints = [...particles.map(p => ({ ...p, color: "rgba(255,255,255,0.6)" })), ...(center ? [{ ...center, color: "#ffffff" } as any] : [])];
+      const allPoints = [...particles.map(p => ({ ...p, color: "rgba(255,255,255,0.6)" })), ...(center ? [{ ...center, color: "#ffffff" }] : [])];
 
       // Configure as points layer for broad compatibility
-      (g as unknown as any)
-        .pointsData(allPoints)
-        .pointLat((d: any) => d.lat)
-        .pointLng((d: any) => d.lng)
-        .pointAltitude((d: any) => d.altitude ?? 0.01)
-        .pointRadius((d: any) => (d.size ? d.size : 0.6))
-        .pointColor((d: any) => d.color ?? "rgba(255,255,255,0.6)");
+      (g as unknown as {
+        pointsData: (d: Particle[]) => GlobeApi;
+        pointLat: (fn: (d: unknown) => number) => GlobeApi;
+        pointLng: (fn: (d: unknown) => number) => GlobeApi;
+        pointAltitude: (fn: (d: unknown) => number) => GlobeApi;
+        pointRadius: (fn: (d: unknown) => number) => GlobeApi;
+        pointColor: (fn: (d: unknown) => string) => GlobeApi;
+      })
+        .pointsData(allPoints as unknown as Particle[])
+        .pointLat((d: unknown) => (d as Particle).lat)
+        .pointLng((d: unknown) => (d as Particle).lng)
+        .pointAltitude((d: unknown) => (d as Particle).altitude ?? 0.01)
+        .pointRadius((d: unknown) => ((d as Particle).size ? (d as Particle).size! : 0.6))
+        .pointColor((d: unknown) => (d as Particle & { color?: string }).color ?? "rgba(255,255,255,0.6)");
 
       // Focus camera on user if available
       if (user) g.pointOfView({ lat: user.lat, lng: user.lng, altitude: 1.8 }, 1400);
@@ -137,7 +144,7 @@ export default function ParticlesGlobe({
         if (!isMounted) return;
         const s = Math.sin(t * 0.001);
         const altShift = 0.002 * (0.5 + 0.5 * s);
-        (g as unknown as any).pointAltitude((d: Particle) => (d.altitude ?? 0.01) + altShift * (d.seed ?? 1));
+        (g as unknown as { pointAltitude: (fn: (d: Particle) => number) => void }).pointAltitude((d: Particle) => (d.altitude ?? 0.01) + altShift * (d.seed ?? 1));
         raf = requestAnimationFrame(animate);
       };
       raf = requestAnimationFrame(animate);
@@ -160,7 +167,7 @@ export default function ParticlesGlobe({
     const cleanup = init();
     return () => {
       // ensure async cleanup runs
-      Promise.resolve(cleanup).then((fn: any) => fn && fn());
+      Promise.resolve(cleanup).then((fn: (() => void) | undefined) => fn && fn());
     };
   }, [user, buildParticleTexture]);
 

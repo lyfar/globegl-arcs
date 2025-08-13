@@ -34,7 +34,8 @@ export function useMicrophoneLevel(enabled: boolean) {
         });
 
         // Safari prefix fallback
-        const Ctor: typeof AudioContext = (window as any).AudioContext || (window as any).webkitAudioContext;
+        const win = window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext };
+        const Ctor: typeof AudioContext = win.AudioContext || win.webkitAudioContext!;
         audioCtx = new Ctor();
         try { await audioCtx.resume(); } catch {}
         source = audioCtx.createMediaStreamSource(stream);
@@ -93,7 +94,9 @@ export function useMicrophoneLevel(enabled: boolean) {
           // Mix envelope with instantaneous boosted level for stronger transients
           const mixed = Math.min(1, envelope * 0.6 + boosted * 0.6);
           levelRef.current = Math.max(0, Math.min(1, mixed));
-          try { (window as any).__micLevel = levelRef.current; } catch {}
+          try {
+            (window as unknown as { __micLevel?: number }).__micLevel = levelRef.current;
+          } catch {}
           raf = requestAnimationFrame(tick);
         };
         raf = requestAnimationFrame(tick);
@@ -113,12 +116,12 @@ export function useMicrophoneLevel(enabled: boolean) {
         document.addEventListener("visibilitychange", onVisibility);
 
         // Cleanup these listeners in return below
-        (setup as any)._cleanup = () => {
-          window.removeEventListener("click", onInteract as any);
-          window.removeEventListener("touchstart", onInteract as any);
-          document.removeEventListener("visibilitychange", onVisibility as any);
+        (setup as unknown as { _cleanup?: () => void })._cleanup = () => {
+          window.removeEventListener("click", onInteract);
+          window.removeEventListener("touchstart", onInteract);
+          document.removeEventListener("visibilitychange", onVisibility);
         };
-      } catch (e) {
+      } catch {
         // If permission denied or any error, keep level at 0
         levelRef.current = 0;
       }
@@ -139,8 +142,8 @@ export function useMicrophoneLevel(enabled: boolean) {
         }
       }
       try {
-        const fn = (setup as any)._cleanup as undefined | (() => void);
-        fn && fn();
+        const fn = (setup as unknown as { _cleanup?: () => void })._cleanup;
+        if (typeof fn === "function") fn();
       } catch {}
     };
   }, [enabled]);
