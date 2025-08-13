@@ -90,8 +90,8 @@ export const GlobeAssistant: React.FC<GlobeAssistantProps> = ({
           .bumpImageUrl(globeBumpUrl ?? null)
           .showGlobe(true)
           .showAtmosphere(true)
-          .atmosphereColor("#a78bfa")
-          .atmosphereAltitude(0.28)
+          .atmosphereColor("#bba3ff")
+          .atmosphereAltitude(0.34)
            .showGraticules(showGraticules)
           .pointOfView({ lat: 20, lng: 0, altitude: 2.4 }, 0)
           .enablePointerInteraction(true);

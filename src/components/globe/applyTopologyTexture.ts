@@ -108,6 +108,8 @@ export async function applyTopologyTexture(
       const invTex = new THREE.CanvasTexture(canvas);
       invTex.colorSpace = THREE.SRGBColorSpace;
       origTex.colorSpace = THREE.SRGBColorSpace;
+      invTex.anisotropy = 8;
+      origTex.anisotropy = 8;
 
       // remove default url map so custom map is used
       (globe as unknown as { globeImageUrl: (url: string | null) => unknown }).globeImageUrl(null);
@@ -117,7 +119,7 @@ export async function applyTopologyTexture(
       if (m) {
         m.map = invTex;
         m.bumpMap = origTex;
-        m.bumpScale = 2.4;
+        m.bumpScale = 2.2;
         // Keep material color as-is so external lighting/tint can influence the result
         m.needsUpdate = true;
       }
